@@ -71,9 +71,9 @@ void gfid_for_list (FILE *master_list)
                 }
 
                 if (error) {
-                        printf ("%s %s\n", iname, error_str);
+                        printf ("%s %s\n", error_str, iname);
                 } else {
-                        printf ("%s " GFID_FORMAT_STR "\n", iname, GFID_VALUE_STR(gfid));
+                        printf (GFID_FORMAT_STR " %s\n", GFID_VALUE_STR(gfid), iname);
                 }
         }
 }
