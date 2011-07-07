@@ -1,0 +1,9 @@
+gfid
+----
+
+This repository contains a couple of tools that assist in identifying files/directories
+with mismatched gfid's on a GlusterFS backend.
+
+----
+Vikas Gorur
+http://github/vikasgorur
