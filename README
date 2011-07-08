@@ -21,10 +21,17 @@ bricks.
 
 The first step is to construct the master list of all files:
 
-# find /export/brick1 > brick1.txt
-# find /export/brick2 > brick2.txt
-# find /export/brick3 > brick3.txt
-# find /export/brick4 > brick4.txt
+# cd /export/brick1
+# find . > brick1.txt
+
+# cd /export/brick2
+# find . > brick2.txt
+
+# cd /export/brick3
+# find . > brick3.txt
+
+# cd /export/brick4
+# find . > brick4.txt
 
 # cat brick1.txt brick2.txt brick3.txt brick4.txt | sort -u > master_list.txt
 
