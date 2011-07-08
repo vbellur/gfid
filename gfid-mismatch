@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+
+# Take the outputs of `gfid-list' from many bricks and produce a list of
+# inodes with mismatched gfid's.
+#
+# Sample invocation
+# # gfid-mismatch gfid.1 gfid.2 gfid.3
+#
+# Output format:
+#
+# <Filename>: First set | Second set | ...
+# bin/bash: gfid.2 gfid.3 | gfid.1
+#
+# For each mismatched file, the set of given filenames is divided into disjoint
+# sets; the gfid is the same within each of these sets.
+
+import sys
+
+def usage():
+    print "usage: gfid-mismatch <gfid-file-1> <gfid-file-2> ..."
+    exit(1)
+
+def open_files(names):
+    """Open all the files and return the objects in a list"""
+
+    files = []
+
+    for name in names:
+        try:
+            files.append(file(name, "r"))
+        except IOError, (errno, msg):
+            print "Cannot open file %s: %s" % (name, msg)
+            sys.exit(2)
+
+    return files
+
+def all_lines_empty(lines):
+    for l in lines:
+        if l != '':
+            return False
+    return True
+
+def is_gfid(text):
+    """Return true if the text is a gfid. The validation is not strict. Anything other
+       than one of the *_missing strings is assumed to be a gfid"""
+
+    if not ((text == "inode_missing") or (text == "xattr_missing_key") or
+            (text == "xattr_missing_value")):
+        return True
+
+def detect_mismatches(files):
+    line_number = 0
+
+    try:
+        while True:
+            lines = []
+            lines = [f.readline()[:-1] for f in files]
+            line_number += 1
+
+            if lines[0] == '':
+                if all_lines_empty(lines):
+                    sys.exit(0)
+                else:
+                    print "Error on line %d: One of the files ends prematurely." % line_number
+                    sys.exit(3)
+
+            gfid = {}
+
+            pieces = lines[0].split(" ", 1)
+            name   = pieces[1]
+            if is_gfid(pieces[0]):
+                gfid[pieces[0]] = [files[0].name]
+
+            i = 0
+            for l in lines:
+                if l == '':
+                    if all_lines_empty(lines):
+                        sys.exit(0)
+                    else:
+                        print "Error on line %d: One of the files ends prematurely." % line_number
+                        sys.exit(3)
+
+                pieces = l.split(" ", 1)
+                if pieces[1] != name:
+                    print "Error on line %d: file name is not same in all files." % line_number
+                    for (l, f) in zip(lines, files):
+                        print "\t%s: %s" % (f.name, l.split(" ", 1)[1])
+                    sys.exit(3)
+
+                if is_gfid(pieces[0]):
+                    if gfid.has_key(pieces[0]) and files[i].name not in gfid[pieces[0]]:
+                        gfid[pieces[0]].append(files[i].name)
+                    else:
+                        gfid[pieces[0]] = [files[i].name]
+
+                i += 1
+
+            if len(gfid) > 1:
+                # We have found more than one unique gfid
+                print "%s: %s" % (name, " | ".join([" ".join(f) for f in gfid.values()]))
+
+    except IndexError:
+        print "Error on line %d: One of the files is not in the proper format." % line_number
+        sys.exit(3)
+
+def main():
+    if len(sys.argv) < 3:
+        usage()
+
+    files = open_files(sys.argv[1:])
+
+    detect_mismatches(files)
+
+if __name__ == "__main__":
+    main()
