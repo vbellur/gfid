@@ -61,6 +61,8 @@ attribute or the inode doesn't exist on them.
 
 We can delete the gfid's now by doing:
 
+# gluster volume stop <affected volume>
+
 # gfid-mismatch brick1.gfid brick2.gfid brick3.gfid brick4.gfid | cut -f1 -d: > mismatched.txt
 
 # cd /export/brick1
@@ -74,6 +76,10 @@ usr/bin/factor: removed OK
 usr/bin/vim: No such file or directory
 
 (or another error).
+
+IMPORTANT NOTE: The deletion of gfid's must be done ONLY ON A STOPPED
+VOLUME. Deleting the gfid's on a running volume with mounted clients
+will cause more problems instead of solving them.
 
 ----
 Vikas Gorur
