@@ -1,8 +1,79 @@
 gfid
 ----
 
-This repository contains a couple of tools that assist in identifying files/directories
-with mismatched gfid's on a GlusterFS backend.
+This repository contains tools that assist in identifying
+files/directories with mismatched gfid's on a GlusterFS backend.
+
+Sample session
+--------------
+
+Let's say that you have a 4-node distribute-replicate cluster that has
+inodes with mismatched gfid's. We'll assume the bricks are called:
+
+/export/brick1
+/export/brick2
+/export/brick3
+/export/brick4
+
+It doesn't matter that these are on different machines. The tools in
+this repository only work on file lists gathered (manually) from these
+bricks.
+
+The first step is to construct the master list of all files:
+
+# find /export/brick1 > brick1.txt
+# find /export/brick2 > brick2.txt
+# find /export/brick3 > brick3.txt
+# find /export/brick4 > brick4.txt
+
+# cat brick1.txt brick2.txt brick3.txt brick4.txt | sort -u > master_list.txt
+
+Then we need to get the gfid's of all the inodes from these bricks:
+
+# cd /export/brick1
+# gfid-list /path/to/master_list.txt > brick1.gfid
+
+# cd /export/brick2
+# gfid-list /path/to/master_list.txt > brick2.gfid
+
+# cd /export/brick3
+# gfid-list /path/to/master_list.txt > brick3.gfid
+
+# cd /export/brick4
+# gfid-list /path/to/master_list.txt > brick4.gfid
+
+Now we're ready to identify the mismatched inodes:
+
+# gfid-mismatch brick1.gfid brick2.gfid brick3.gfid brick4.gfid
+
+This will produce output something like this:
+
+usr/bin/factor: brick1.gfid brick2.gfid | brick3.gfid brick4.gfid
+usr/bin/seq: brick1.gfid | brick3.gfid
+[...]
+
+The first line means that usr/bin/factor on brick1 and brick2 has the
+same gfid which is different from the gfid on brick3 and brick4.
+
+The second line means that the gfid of usr/bin/seq on brick1 is
+different from that on brick3. brick2 and brick4 either don't have the
+attribute or the inode doesn't exist on them.
+
+We can delete the gfid's now by doing:
+
+# gfid-mismatch brick1.gfid brick2.gfid brick3.gfid brick4.gfid | cut -f1 -d: > mismatched.txt
+
+# cd /export/brick1
+# gfid-delete /path/to/mismatched.txt
+
+Repeat for the other bricks. `gfid-delete' will also produce a log
+with one entry for each file, which is either:
+
+usr/bin/factor: removed OK
+        OR
+usr/bin/vim: No such file or directory
+
+(or another error).
 
 ----
 Vikas Gorur
