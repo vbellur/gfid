@@ -4,7 +4,7 @@
 # inodes with mismatched gfid's.
 #
 # Sample invocation
-# # gfid-mismatch gfid.1 gfid.2 gfid.3
+# # gfid-mismatch -v gfid.1 gfid.2 gfid.3
 #
 # Output format:
 #
@@ -16,9 +16,10 @@
 
 import sys
 
-def usage():
-    print "usage: gfid-mismatch <gfid-file-1> <gfid-file-2> ..."
-    exit(1)
+try:
+    from optparse import OptionParser
+except ImportError:
+    print "Error importing 'optparse'"
 
 def open_files(names):
     """Open all the files and return the objects in a list"""
@@ -48,7 +49,7 @@ def is_gfid(text):
             (text == "xattr_missing_value")):
         return True
 
-def detect_mismatches(files):
+def detect_mismatches(files, options):
     line_number = 0
 
     try:
@@ -97,19 +98,29 @@ def detect_mismatches(files):
 
             if len(gfid) > 1:
                 # We have found more than one unique gfid
-                print "%s: %s" % (name, " | ".join([" ".join(f) for f in gfid.values()]))
+                if options.verbose:
+                    print "%s: %s" % (name, " | ".join([" ".join(f) for f in gfid.values()]))
+                else:
+                    print name
 
     except IndexError:
         print "Error on line %d: One of the files is not in the proper format." % line_number
         sys.exit(3)
 
 def main():
-    if len(sys.argv) < 3:
-        usage()
+    usage  = "usage: %prog [options] <gfid-file-1> <gfid-file-2> ..."
+    parser = OptionParser(usage=usage)
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
+                      default=False,
+                      help="Show details of the mismatch by dividing the files into disjoint sets with the gfid being the same within each set")
 
-    files = open_files(sys.argv[1:])
+    (options, args) = parser.parse_args()
 
-    detect_mismatches(files)
+    if (len(args) < 1):
+        parser.error("No filenames specified")
+
+    files = open_files(args)
+    detect_mismatches(files, options)
 
 if __name__ == "__main__":
     main()

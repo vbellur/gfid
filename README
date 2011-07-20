@@ -51,26 +51,13 @@ Then we need to get the gfid's of all the inodes from these bricks:
 
 Now we're ready to identify the mismatched inodes:
 
-# gfid-mismatch brick1.gfid brick2.gfid brick3.gfid brick4.gfid
+# gfid-mismatch brick1.gfid brick2.gfid brick3.gfid brick4.gfid > mismatched.txt
 
-This will produce output something like this:
-
-usr/bin/factor: brick1.gfid brick2.gfid | brick3.gfid brick4.gfid
-usr/bin/seq: brick1.gfid | brick3.gfid
-[...]
-
-The first line means that usr/bin/factor on brick1 and brick2 has the
-same gfid which is different from the gfid on brick3 and brick4.
-
-The second line means that the gfid of usr/bin/seq on brick1 is
-different from that on brick3. brick2 and brick4 either don't have the
-attribute or the inode doesn't exist on them.
+This will generate the list of files with mismatched gfid's, one filename per line.
 
 We can delete the gfid's now by doing:
 
 # gluster volume stop <affected volume>
-
-# gfid-mismatch brick1.gfid brick2.gfid brick3.gfid brick4.gfid | cut -f1 -d: > mismatched.txt
 
 # cd /export/brick1
 # gfid-delete /path/to/mismatched.txt
@@ -87,6 +74,35 @@ usr/bin/vim: No such file or directory
 IMPORTANT NOTE: The deletion of gfid's must be done ONLY ON A STOPPED
 VOLUME. Deleting the gfid's on a running volume with mounted clients
 will cause more problems instead of solving them.
+
+Verbose mode
+------------
+
+If you want to know details about the mismatch you can run:
+
+# gfid-mismatch -v brick1.gfid brick2.gfid brick3.gfid brick4.gfid > mismatched.txt
+
+This will produce output something like this:
+
+usr/bin/factor: brick1.gfid brick2.gfid | brick3.gfid brick4.gfid
+usr/bin/seq: brick1.gfid | brick3.gfid
+[...]
+
+The first line means that usr/bin/factor on brick1 and brick2 has the
+same gfid which is different from the gfid on brick3 and brick4.
+
+The second line means that the gfid of usr/bin/seq on brick1 is
+different from that on brick3. brick2 and brick4 either don't have the
+attribute or the inode doesn't exist on them.
+
+Note that if you use the verbose mode you can't directly pass its
+output to gfid-delete. You'll have to strip out everything except the
+filename by doing:
+
+# cat mismatched.txt | cut -f1 -d: > mismatched2.txt
+
+However, beware that this will not work properly if the filenames
+themselves contain the ':' character.
 
 ----
 Vikas Gorur
