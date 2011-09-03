@@ -1,0 +1,43 @@
+#!/bin/bash -e
+
+# This script reads a list of files/directories which have mismatched         
+# gfid's and fixes them.                                                       
+
+# For directories it creates a new directory and moves all the contents        
+# inside it and renames it.                                                    
+
+# For files it copies them to a temporary name and renames it.                 
+
+# Run this script with the current working directory being the GlusterFS       
+# mountpoint.                                                                  
+
+FILE=$1
+
+TMPFILE=".gfid_tmp_file"
+TMPDIR=".gfid_tmp_dir"
+
+if [ "$#" -ne 1 ]; then
+    echo "usage: gfid-mv <mismatch file>"
+    exit 1
+fi
+
+while read line
+do
+    if [ -h "$line" ]; then
+	# skip symbolic links
+	true
+    elif [ -f "$line" ]; then
+        rm -f "$TMPFILE"
+        rsync -aAX "$line" "$TMPFILE"
+        mv "$TMPFILE" "$line"
+	echo "$line: OK"
+    elif [ -d "$line" ]; then
+        rm -rf "$TMPDIR"
+        rsync -ptgodAX "$line" "$TMPDIR"
+	mv "$line"/* "$TMPDIR"
+	mv -T "$TMPDIR" "$line"
+	echo "$line: OK"
+    elif [ ! -e "$line" ]; then
+        echo "$line: ENOENT"
+    fi
+done <"$FILE"
