@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 # This script reads a list of files/directories which have mismatched         
 # gfid's and fixes them.                                                       
