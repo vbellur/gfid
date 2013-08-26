@@ -104,6 +104,34 @@ filename by doing:
 However, beware that this will not work properly if the filenames
 themselves contain the ':' character.
 
+Deleting .glusterfs links
+-------------------------
+
+In Gluster versions 3.3 and above, there is a hidden .glusterfs directory that contains links to files and directories. The names of these links are based on the gfids. You will want to delete these links as well.
+
+Create a gfid list for only mismatched files on each brick:
+
+# cd /export/brick1
+# gfid-list /path/to/mismatched.txt > brick1_mismatched.gfid
+
+# cd /export/brick2
+# gfid-list /path/to/mismatched.txt > brick2_mismatched.gfid
+
+# cd /export/brick3
+# gfid-list /path/to/mismatched.txt > brick3_mismatched.gfid
+
+# cd /export/brick4
+# gfid-list /path/to/mismatched.txt > brick4_mismatched.gfid
+
+
+Delete the links for the defunct gfids:
+
+# cd /export/brick1/.glusterfs
+# gfid-unlink /path/to/brick1_mismatched.gfid
+
+PLEASE NOTE: You must cd into the hidden .glusterfs directory on each brick before running gfid-unlink
+
+
 ----
 Vikas Gorur
 http://github/vikasgorur
